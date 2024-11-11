@@ -25,14 +25,14 @@ class Product(BaseModel):
     id: int
     product_name: str
     product_cnt: int
-    is_available: bool = True
+    is_available: bool
 
     model_config = {
         "json_schema_extra": {
             "examples": [
                 {
                     "id": 1,
-                    "prodict_name": "Table",
+                    "product_name": "Table",
                     "product_cnt": 10,
                     "is_available": True
                 }

@@ -133,9 +133,9 @@ async def update_cart(product_data: Product, user_id: int = Path(..., title="The
         if u.id == user_id:
             user = u
             break
-
+    print(user_list, product_list, cart_list)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart with supplied ID doesn't exist", )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID={user_id} not found", )
 
     user_email = user.email
     cart = None
@@ -144,15 +144,17 @@ async def update_cart(product_data: Product, user_id: int = Path(..., title="The
             cart = c
             break
 
+    is_new_cart = False
+
     if cart is None:
-        cart = Cart()
-        cart.user_mail = user_email
-        cart.product_id = product_data.id
-        cart.product_count = 0
+        cart_id = None
         if len(cart_list) == 0:
-            cart.id = 1
+            cart_id = 1
         else:
-            cart.id = cart_list[-1].id + 1
+            cart_id = cart_list[-1].id + 1
+        cart_item = {"id": cart_id, "user_mail": user_email, "product_id": product_data.id, "product_count": 0}
+        cart = Cart(**cart_item)
+        is_new_cart = True
 
     is_added = False
 
@@ -164,7 +166,12 @@ async def update_cart(product_data: Product, user_id: int = Path(..., title="The
                     break
                 else:
                     product.product_cnt = current_count
-                    cart.product_count = product_data.product_cnt
+                    if product.product_cnt == 0:
+                        product.is_available = False
+                    if is_new_cart:
+                        cart.product_count = product_data.product_cnt
+                    else:
+                        cart.product_count += product_data.product_cnt
                     is_added = True
                     break
 
@@ -174,7 +181,7 @@ async def update_cart(product_data: Product, user_id: int = Path(..., title="The
             "message": "Cart updated successfully."
         }
 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart with supplied ID doesn't exist", )
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unable to add product to cart", )
 
 
 @cart_router.delete("/{cart_id}", status_code=201)
@@ -184,6 +191,6 @@ async def delete_single_cart(cart_id: int) -> dict:
         if cart.id == cart_id:
             cart_list.pop(index)
             return {
-                "message": "Сart deleted successfully."
+                "message": f"Cart_id{cart_id} deleted successfully."
             }
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Сart with supplied ID doesn't exist", )
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Cart_id{cart_id} with supplied ID doesn't exist", )
